@@ -21,8 +21,10 @@ public class Trie {
 		return this.key;
 	}
 	
-	public String[] handleIncome(String income) {
+	public String[] getNextWords(String income) {
 		String[] suggestions = new String[3];
+		String[] words = income.trim().split("\\s+");
+		String wanted = words[words.length - 1];
 		return suggestions;
 	}
 	
@@ -47,6 +49,9 @@ public class Trie {
 	}
 	
 	private void findNode(String word, int wordIndex) {
+		if (wordIndex > word.length() - 1) {
+			return;
+		}
 		for (Trie childNode : this.children) {
 			if (childNode.getKey().equals(word.substring(wordIndex, wordIndex + 1))) {
 				childNode.findNode(word, wordIndex + 1);
