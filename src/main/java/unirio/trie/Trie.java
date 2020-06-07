@@ -22,10 +22,9 @@ public class Trie {
 	}
 	
 	public String[] getNextWords(String income) {
-		String[] suggestions = new String[3];
 		String[] words = income.trim().split("\\s+");
 		String wanted = words[words.length - 1];
-		return suggestions;
+		return this.getSuggestions(wanted);
 	}
 	
 	public void insertWord(String income) {
@@ -35,8 +34,72 @@ public class Trie {
 		String[] words = income.trim().split("\\s+");
 		for (String word : words) {
 			System.out.println("inserting word --> " + word);
-			this.findNode(word, 0);
+			this.findInsertionNode(word, 0);
 		}
+	}
+	
+	private String[] getSuggestions(String search) {
+		String[] suggestions = new String[3];
+		Trie searchRoot = this.findNode(search, 0);
+		boolean finished = false;
+		if (searchRoot != null && searchRoot.maxChild > 0) {
+			for (Trie child : searchRoot.children) {
+				if  (finished) {
+					break;
+				}
+				String[] childSuggestions = child.getChildWords(child.key);
+				if (childSuggestions != null) {
+					for (int i = 0; i <= childSuggestions.length - 1; i++) {
+						if (suggestions[i] != null) {
+							continue;
+						}
+						suggestions[i] = childSuggestions[i];
+						if (i == 2 && suggestions[i] != null) {
+							finished = true;
+						}
+					}
+				}
+			}
+		}
+		return suggestions;
+	}
+	
+	private String[] getChildWords(String word) {
+		String[] suggestions = new String[3];
+		if (this.maxChild > 0) {
+			suggestions[0] = word + this.key;
+			return suggestions;
+		}
+		for (Trie child : this.children) {
+			String[] childSuggestions = child.getChildWords(word + child.key);
+			if (childSuggestions[2] != null) {
+				return childSuggestions;
+			} else {
+				for (int i = 0; i <= childSuggestions.length - 1; i++) {
+					if (suggestions[i] != null) {
+						continue;
+					}
+					suggestions[i] = childSuggestions[i];
+				}
+			}
+		}
+		return suggestions;
+	}
+	
+	private Trie findNode(String search, int wordIndex) {
+		if (wordIndex > search.length() - 1) {
+			return null;
+		}
+		for (Trie childNode : this.children) {
+			Trie childRef = childNode.nodeKeyIsEqual(search, wordIndex);
+			if (childRef != null) {
+				Trie node = childNode.findNode(search, wordIndex + 1);
+				return node != null ? node : this;
+			} else {
+				continue;
+			}
+		}
+		return this;
 	}
 	
 	private void increaseChildrenSize() {
@@ -48,13 +111,18 @@ public class Trie {
 		}
 	}
 	
-	private void findNode(String word, int wordIndex) {
+	private Trie nodeKeyIsEqual(String word, int wordIndex) {
+		return this.getKey().equals(word.substring(wordIndex, wordIndex + 1)) ? this : null;
+	}
+	
+	private void findInsertionNode(String word, int wordIndex) {
 		if (wordIndex > word.length() - 1) {
 			return;
 		}
 		for (Trie childNode : this.children) {
-			if (childNode.getKey().equals(word.substring(wordIndex, wordIndex + 1))) {
-				childNode.findNode(word, wordIndex + 1);
+			Trie childRef = childNode.nodeKeyIsEqual(word, wordIndex);
+			if (childRef != null) {
+				childNode.findInsertionNode(word, wordIndex + 1);
 			} else {
 				continue;
 			}
